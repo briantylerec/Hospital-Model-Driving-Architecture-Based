@@ -1,0 +1,17 @@
+<?php
+
+function dbConnect(){
+    $connection = pg_connect('host=ec2-75-101-131-79.compute-1.amazonaws.com dbname=d87459nbaub4ev user=zqtnqnmlumkmup password=b5676b7f7a4929720469df975dfe01ef5fab6a87bd735bff3d1baffec6c3178f');
+
+    if ($connection) {
+        echo "Correct database connection";
+        return $connection;
+    }
+    echo "Incorrect database connection";
+    return false;
+}
+
+function dbDisconnect($conn){
+    pg_close($conn);
+    echo "Correct database disconnection";
+}

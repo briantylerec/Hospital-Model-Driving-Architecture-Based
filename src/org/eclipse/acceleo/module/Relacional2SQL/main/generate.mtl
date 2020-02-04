@@ -1,0 +1,613 @@
+[comment encoding = UTF-8 /]
+[module generate('http://www.example.org/dBRelacional')]
+
+
+
+
+[template public generateElement(anEsquema : Esquema)]
+[comment @main/]
+	[file (anEsquema.nombre + '.sql', false)]
+SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0;
+SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0;
+SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='TRADITIONAL,ALLOW_INVALID_DATES';
+CREATE SCHEMA IF NOT EXISTS [anEsquema.nombre/] DEFAULT CHARACTER SET utf8 ;
+USE  [anEsquema.nombre/];
+	[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+			CREATE TABLE IF NOT EXISTS [anEsquema.nombre/].[t.nombre/] (
+			[for (c:Columna | t.columna)]
+				[c.nombre/] [parseTipo(c.tipo)/] NOT NULL,				
+			[/for]
+			[comment Generamos las claves primarias/]
+			[for (c:Columna | t.columna)]
+				[if (c.esPK=true)]
+					[if (t.fks -> size()=0)]
+						PRIMARY KEY ([c.nombre/])
+					[else]
+						PRIMARY KEY ([c.nombre/]),
+					[/if]
+
+				[/if]	
+			[/for]
+			[comment Generamos claves foraneas/]
+			[for (r: FK | t.fks)separator (',')]
+				CONSTRAINT fk_[t.nombre/]_[r.referencia.nombre/]1
+					FOREIGN KEY ([r.columna.nombre/]) 
+					REFERENCES [anEsquema.nombre/].[r.referencia.nombre/] ([r.columna.nombre/])
+					ON DELETE NO ACTION
+    				ON UPDATE NO ACTION
+			[/for])
+			ENGINE = InnoDB;
+[/for]
+[/file]
+
+
+
+[comment Creamos el index/]
+[file ('index.html', false)]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>CRUD Tables</title>
+    <link href="css/reset.css" rel="stylesheet"/>
+    <link href="http://fonts.googleapis.com/css?family=Lato:100,300,400,700" rel="stylesheet">
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <link href="css/font-awesome.min.css" rel="stylesheet">
+    <link href="css/jquery.bxslider.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/media-query.css" rel="stylesheet">
+</head>
+
+<body background="http://destinonegocio.com/wp-content/uploads/2015/10/ico-destinonegocio-manejo-de-leads-istock-getty-images.jpg">
+<div class="body-inner-wrapper">
+
+<div id="menu-wrapper" class="navbar-wrapper">
+    <div class="inner-container">
+        <div id="navigation-bar" class="navbar navbar-inverse navbar-static-top" role="navigation">
+            <div class="container">
+                <div class="navbar-header">
+                    <div>
+                        <a id="logo" class="navbar-brand" href="index.html"><img class="" src="logo1.png" alt=""></a>
+                    </div>
+                </div>
+                <div id="menu">
+                    <ul >
+						[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+							<li class="[t.nombre/]"><a href="index[t.nombre/].php">[t.nombre/]</a></li>
+						[/for]
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+</div>
+    <script src="js/jquery.min.js"></script>
+    <script src="js/jquery.nicescroll.min.js"></script>
+    <script src="js/waypoints.min.js"></script>
+    <script src="js/themehippo.js"></script>
+    <script src="js/script.js"></script>
+
+</body>
+</html>
+[/file]
+
+
+[comment Creamos los models/]
+
+	[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+		[file ('/model/'+t.nombre+'.php', false)]
+<?php
+class [t.nombre/]
+{
+	private $pdo;
+
+	[for (c:Columna | t.columna)]
+			public $[c.nombre/];				
+	[/for]
+
+
+	public function __CONSTRUCT()
+	{
+		try
+		{
+			$this->pdo = Database::StartUp();     
+		}
+		catch(Exception $e)
+		{
+			die($e->getMessage());
+		}
+	}
+	public function Listar()
+	{
+		try
+		{
+			$result = array();
+
+			$stm = $this->pdo->prepare("SELECT * FROM [t.nombre/]");
+			$stm->execute();
+
+			return $stm->fetchAll(PDO::FETCH_OBJ);
+		}
+		catch(Exception $e)
+		{
+			die($e->getMessage());
+		}
+	}
+
+	[for (r: FK | t.fks)]
+	public function Listar[r.referencia.nombre/]()
+	{
+		try
+		{
+			$result = array();
+
+			$stm = $this->pdo->prepare("SELECT * FROM [r.referencia.nombre/]");
+			$stm->execute();
+
+			return $stm->fetchAll(PDO::FETCH_OBJ);
+		}
+		catch(Exception $e)
+		{
+			die($e->getMessage());
+		}
+	}
+	[/for]
+
+
+	[for (c:Columna|t.columna)]
+	[if (c.esPK=true)]
+				
+	public function Obtener($[c.nombre/])
+	{
+		try 
+		{
+			$stm = $this->pdo
+			          ->prepare("SELECT * FROM [t.nombre/] WHERE [c.nombre/]= ?");
+			          
+
+			$stm->execute(array($[c.nombre/]));
+			return $stm->fetch(PDO::FETCH_OBJ);
+		} catch (Exception $e) 
+		{
+			die($e->getMessage());
+		}
+	}
+	public function Eliminar($[c.nombre/])
+	{
+		try 
+		{
+			$stm = $this->pdo
+			            ->prepare("DELETE FROM [t.nombre/] WHERE [c.nombre/]= ?");			          
+
+			$stm->execute(array($[c.nombre/]));
+		} catch (Exception $e) 
+		{
+			die($e->getMessage());
+		}
+	}
+	[/if]	
+	[/for]
+	public function Actualizar($data)
+	{
+		try 
+		{
+			$sql = "UPDATE [t.nombre/] SET 
+					[for (c:Columna | t.columna)separator (',')]
+						
+						[c.nombre/]=?
+
+					[/for]
+					[for (c:Columna | t.columna)]
+						[if (c.esPK=true)]
+							WHERE [c.nombre/] = ?";
+						[/if]
+						[/for]
+				    
+
+			$this->pdo->prepare($sql)
+			     ->execute(
+				    array(
+						[for (c:Columna | t.columna)separator (',')]						
+							$data->[c.nombre/]
+						[/for]
+						
+						[for (c:Columna | t.columna)]
+							[if (c.esPK=true)]
+							,$data->[c.nombre/]
+							[/if]
+						[/for]
+					)
+				);
+		} catch (Exception $e) 
+		{
+			die($e->getMessage());
+		}
+	}
+	public function Registrar([t.nombre/] $data)
+	{
+		try 
+		{
+		$sql = "INSERT INTO [t.nombre/] ([for (c:Columna | t.columna)separator (',')]									
+										[c.nombre/]
+										[/for])
+
+		        VALUES ([for (c:Columna | t.columna)separator (',')]?[/for])";
+
+		$this->pdo->prepare($sql)
+		     ->execute(
+				array(
+					[for (c:Columna | t.columna)separator (',')]
+						
+							$data->[c.nombre/]
+
+					[/for]
+                )
+			);
+		} catch (Exception $e) 
+		{
+			die($e->getMessage());
+		}
+	}
+}
+[/file]
+[/for]
+
+[comment conexion database/][comment conexion database/][comment conexion database/][comment conexion database/][comment conexion database/]
+
+[file ('/model/database.php', false)]
+<?php
+class Database
+{
+    public static function StartUp()
+    {
+        $pdo = new PDO('mysql:host=localhost;dbname=[anEsquema.nombre/]', 'root','');
+        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);	
+        return $pdo;
+    }
+}	
+[/file]
+
+[comment Creamos los views/]
+	[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+	[file ('/view/'+t.nombre+'/'+t.nombre+'.php', false)]
+<h1 class="page-header">Manejo tabla [t.nombre/]</h1>
+	<a class="btn btn-primary pull-left" href="index.html">Regresar</a>
+    <a class="btn btn-primary pull-right" href="?c=[t.nombre/]&a=CrudAdd">Agregar</a>
+<br><br><br>
+
+<table class="table  table-striped  table-hover" id="tabla">
+    <thead>
+        <tr>
+		[for (c:Columna | t.columna)]				
+        <th style="width:120px; background-color: #5DACCD; color:#fff">[c.nombre/]</th>            
+		[/for]
+		<th style="width:60px; background-color: #5DACCD; color:#fff"></th>
+        <th style="width:60px; background-color: #5DACCD; color:#fff"></th>
+        </tr>
+    </thead>
+    <tbody>
+    <?php foreach($this->model->Listar() as $r): ?>
+        <tr>
+			[for (c:Columna | t.columna)]
+				[if (c.nombre <> t.fks.columna.nombre)]
+					<td><?php echo $r->[c.nombre/]; ?></td>
+				[else]
+					[for (r: FK | t.fks)]
+					[if (r.referencia.nombre = c.nombre)]
+						<td>
+							<?php foreach($this->model->Listar[r.referencia.nombre/]() as $c): ?>
+			            	<?php if($c->[c.nombre/]==$r->[r.referencia.nombre/]_[c.nombre/]): ?>
+                            <?php echo $c->nombre; ?>
+                        	<?php endif; ?>
+			            	<?php endforeach; ?>
+						</td>
+					[/if]
+					
+				[/for]
+				[/if]
+				
+			[/for]
+			[for (c:Columna | t.columna)]
+				[if (c.esPK=true)]
+				<td><a  class="btn btn-warning" href="?c=[t.nombre/]&a=Crud&[c.nombre/]=<?php echo $r->[c.nombre/]; ?>">Editar</a></td>
+         		<td><a  class="btn btn-danger" onclick="javascript:return confirm('¿Seguro de eliminar este registro?');" href="?c=[t.nombre/]&a=Eliminar&[c.nombre/]=<?php echo $r->[c.nombre/]; ?>">Eliminar</a></td>
+				[/if]
+			[/for]
+        </tr>
+    <?php endforeach; ?>
+    </tbody>
+</table> 
+</body>
+<script  src="assets/js/datatable.js">  
+</script>
+</html>
+	[/file]
+	
+	[comment opcion editar/]	
+	[file ('/view/'+t.nombre+'/'+t.nombre+'-editar.php', false)]
+<h1 class="page-header">
+    Registro [t.nombre/]
+</h1>
+
+<ol class="breadcrumb">
+  <li><a href="?c=[t.nombre/]">[t.nombre/]</a></li>
+</ol>
+
+<form id="frm-alumno" action="?c=[t.nombre/]&a=Modificar" method="post" enctype="multipart/form-data">      
+	[for (c:Columna | t.columna)]
+		[if (c.esPK=true)]
+			<input type="hidden" name="id" value="<?php echo $[t.nombre/]->[c.nombre/]; ?>" />
+		[/if]
+	[/for]
+	
+	[for (c:Columna | t.columna)]
+	[if (c.nombre <> t.fks.columna.nombre)]
+			<div class="form-group">
+        		<label>[c.nombre/]</label>
+        		<input type="text" name="[c.nombre/]" value="<?php echo $[t.nombre/]->[c.nombre/]; ?>" class="form-control" placeholder="Ingrese [c.nombre/]" required>
+    		</div>
+	[else]
+		[for (r: FK | t.fks)]
+			[if (r.referencia.nombre = c.nombre)]
+			<div class="form-group">
+        		<label>[c.nombre/]</label>
+        		<select name="[c.nombre/]">
+            		<?php foreach($this->model->Listar[r.referencia.nombre/]() as $r): ?>
+            		<option value="<?php echo $r->[c.nombre/]; ?>"><?php echo $r->nombre; ?></option>
+            		<?php endforeach; ?>
+        		</select>
+    		</div>
+			[/if]
+		[/for]
+	[/if]				
+	[/for]
+    <hr />
+    
+    <div class="text-right">
+        <button class="btn btn-primary">Actualizar</button>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function(){
+        $("#frm-alumno").submit(function(){
+            return $(this).validate();
+        });
+    })
+</script>
+	[/file]	
+
+	[comment opcion agregar/]	
+	[file ('/view/'+t.nombre+'/'+t.nombre+'-add.php', false)]
+<h1 class="page-header">
+    Registro [t.nombre/]
+</h1>
+
+<ol class="breadcrumb">
+  <li><a href="?c=[t.nombre/]">[t.nombre/]</a></li>
+</ol>
+
+<form id="frm-alumno" action="?c=[t.nombre/]&a=Guardar" method="post" enctype="multipart/form-data">      
+	[for (c:Columna | t.columna)]
+		[if (c.esPK=true)]
+			<input type="hidden" name="id" value="<?php echo $[t.nombre/]->[c.nombre/]; ?>" />
+		[/if]
+	[/for]
+	
+	[for (c:Columna | t.columna)]
+	[if (c.nombre <> t.fks.columna.nombre)]
+			<div class="form-group">
+        		<label>[c.nombre/]</label>
+        		<input type="text" name="[c.nombre/]" value="<?php echo $[t.nombre/]->[c.nombre/]; ?>" class="form-control" placeholder="Ingrese [c.nombre/]" required>
+    		</div>
+	[else]
+		[for (r: FK | t.fks)]
+			[if (r.referencia.nombre = c.nombre)]
+			<div class="form-group">
+        		<label>[c.nombre/]</label>
+        		<select name="[c.nombre/]">
+            		<?php foreach($this->model->Listar[r.referencia.nombre/]() as $r): ?>
+            		<option value="<?php echo $r->[c.nombre/]; ?>"><?php echo $r->nombre; ?></option>
+            		<?php endforeach; ?>
+        		</select>
+    		</div>
+			[/if]
+		[/for]
+	[/if]				
+	[/for]
+    <hr />
+    
+    <div class="text-right">
+        <button class="btn btn-primary">Guardar</button>
+    </div>
+</form>
+
+<script>
+    $(document).ready(function(){
+        $("#frm-alumno").submit(function(){
+            return $(this).validate();
+        });
+    })
+</script>
+	[/file]	
+	[/for]
+
+[comment Creamos los controllers/]
+	[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+	[file ('/controller/'+t.nombre+'.controller.php', false)]
+<?php
+require_once 'model/[t.nombre/].php';
+
+class [t.nombre/]Controller{
+    
+    private $model;
+    
+    public function __CONSTRUCT(){
+        $this->model = new [t.nombre/]();
+    }
+    
+    public function Index(){
+        require_once 'view/header.php';
+        require_once 'view/[t.nombre/]/[t.nombre/].php';
+       
+    }
+    
+    public function Crud(){
+        $[t.nombre/] = new [t.nombre/]();
+        //cambiar el parentesis por corchetes
+		[for (c:Columna | t.columna)]
+		[if ( c.esPK=true)]
+			if(isset($_REQUEST [ '[' /]'[c.nombre/]'[ ']' /])){
+            $[t.nombre/] = $this->model->Obtener($_REQUEST [ '[' /]'[c.nombre/]'[ ']' /]);  
+        }
+		[/if]
+		[/for]
+        
+        
+        require_once 'view/header.php';
+        require_once 'view/[t.nombre/]/[t.nombre/]-editar.php';
+        
+    }
+	
+	public function CrudAdd(){
+        $[t.nombre/] = new [t.nombre/]();
+        //cambiar el parentesis por corchetes
+		[for (c:Columna | t.columna)]
+		[if (c.esPK=true)]
+			if(isset($_REQUEST [ '[' /]'[c.nombre/]'[ ']' /])){
+            $[t.nombre/] = $this->model->Obtener($_REQUEST [ '[' /]'[c.nombre/]'[ ']' /]);
+        }
+		[/if]
+		[/for]
+        
+        
+        require_once 'view/header.php';
+        require_once 'view/[t.nombre/]/[t.nombre/]-add.php';
+        
+    }
+    
+    public function Guardar(){
+        $[t.nombre/] = new [t.nombre/]();
+        //cambiar el parentesis por corchetes
+        [for (c:Columna | t.columna)]
+			$[t.nombre/]->[c.nombre/]= $_REQUEST[ '[' /]'[c.nombre/]'[ ']' /];
+				
+		[/for]
+        $this->model->Registrar($[t.nombre/]);
+        
+        header('Location: index[t.nombre/].php');
+    }
+
+	public function Modificar(){
+        $[t.nombre/] = new [t.nombre/]();
+        //cambiar el parentesis por corchetes
+        [for (c:Columna | t.columna)]
+			$[t.nombre/]->[c.nombre/]= $_REQUEST[ '[' /]'[c.nombre/]'[ ']' /];
+		[/for]
+        
+		$this->model->Actualizar($[t.nombre/]);
+        
+        header('Location: index[t.nombre/].php');
+    }
+    
+    public function Eliminar(){
+		[for (c:Columna | t.columna)]
+		[if ( c.esPK=true)]
+			$this->model->Eliminar($_REQUEST[ '[' /]'[c.nombre/]'[ ']' /]);
+		[/if]
+		[/for]
+        
+        header('Location: index[t.nombre/].php');
+    }
+}
+	[/file]
+	[/for]
+
+[comment header/]
+[file ('/view/header.php', false)]
+<!DOCTYPE html>
+<html lang="es">
+	<head>
+		<title>CRUD Tabla</title>
+        <meta charset="utf-8" />
+        <link rel="stylesheet" href="assets/css/bootstrap.min.css" />
+        <link rel="stylesheet" href="assets/css/bootstrap-theme.min.css" />
+        <link rel="stylesheet" href="assets/js/jquery-ui/jquery-ui.min.css" />
+        <link rel="stylesheet" href="assets/css/style.css" />
+        <link href="plugins/datatables/dataTables.bootstrap.css" rel="stylesheet" type="text/css" />
+        
+        <script src="http://code.jquery.com/jquery-1.11.2.min.js"></script>
+         <script src="plugins/datatables/jquery.dataTables.js" type="text/javascript"></script>
+    <script src="plugins/datatables/dataTables.bootstrap.js" type="text/javascript"></script>
+          <style>
+   body
+   {
+    margin:0;
+    padding:0;
+   }
+   .box
+   {
+    width:1270px;
+        padding:20px;
+    background-color:#fff;
+    border:1px solid #ccc;
+    border-radius:5px;
+    margin-top:25px;
+   }
+  </style>
+	</head>
+    <body background="http://destinonegocio.com/wp-content/uploads/2015/10/ico-destinonegocio-manejo-de-leads-istock-getty-images.jpg">
+        
+  <div class="container box">
+[/file]
+
+[comment index de cada tabla/]
+	[for (t:Tabla | anEsquema.tablas) separator ('\n')]
+	[file ('index'+t.nombre+'.php', false)]
+<?php
+require_once 'model/database.php';
+
+$controller = '[t.nombre/]';
+
+// Todo esta lógica hara el papel de un FrontController
+//cambiar parentesis
+if(!isset($_REQUEST [ '[' /]'c'[ ']' /]))
+{
+    require_once "controller/$controller.controller.php";
+    $controller = ucwords($controller) . 'Controller';
+    $controller = new $controller;
+    $controller->Index();    
+}
+else
+{
+    // Obtenemos el controlador que queremos cargar
+    $controller = strtolower($_REQUEST [ '[' /]'c'[ ']' /]);
+    $accion = isset($_REQUEST [ '[' /]'a'[ ']' /]) ? $_REQUEST [ '[' /]'a'[ ']' /] : 'Index';
+    
+    // Instanciamos el controlador
+    require_once "controller/$controller.controller.php";
+    $controller = ucwords($controller) . 'Controller';
+    $controller = new $controller;
+    
+    // Llama la accion
+    call_user_func( array( $controller, $accion ) );
+}
+	[/file]
+	[/for]
+
+[/template]
+
+
+[query public parseTipo(tipo: TipoDato) : String =
+	if tipo= TipoDato::Entero then
+		'INT'
+	else
+		if tipo = TipoDato::Cadena then 
+			'VARCHAR (40)'
+		else
+			tipo.toString()
+		endif
+	endif
+/]
