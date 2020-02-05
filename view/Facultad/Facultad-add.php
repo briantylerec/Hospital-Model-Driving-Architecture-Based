@@ -8,7 +8,6 @@
 
 <form id="frm-alumno" action="?c=Facultad&a=Guardar" method="post" enctype="multipart/form-data">      
 			<input type="hidden" name="id" value="<?php echo $Facultad->idFacultad; ?>" />
-
 	
 			<div class="form-group">
         		<label>idFacultad</label>

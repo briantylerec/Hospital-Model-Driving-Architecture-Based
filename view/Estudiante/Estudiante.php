@@ -14,7 +14,6 @@
         <th style="width:120px; background-color: #5DACCD; color:#fff">esBecado</th>            
         <th style="width:120px; background-color: #5DACCD; color:#fff">edad</th>            
         <th style="width:120px; background-color: #5DACCD; color:#fff">fechanacimiento</th>            
-
 		<th style="width:60px; background-color: #5DACCD; color:#fff"></th>
         <th style="width:60px; background-color: #5DACCD; color:#fff"></th>
         </tr>

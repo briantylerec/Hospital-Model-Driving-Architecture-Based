@@ -21,7 +21,6 @@ class CarreraController{
 			if(isset($_REQUEST ['idCarrera'])){
             $Carrera = $this->model->Obtener($_REQUEST ['idCarrera']);  
         }
-
         
         
         require_once 'view/header.php';

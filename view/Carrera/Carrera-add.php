@@ -8,7 +8,6 @@
 
 <form id="frm-alumno" action="?c=Carrera&a=Guardar" method="post" enctype="multipart/form-data">      
 			<input type="hidden" name="id" value="<?php echo $Carrera->idCarrera; ?>" />
-
 	
 			<div class="form-group">
         		<label>idCarrera</label>

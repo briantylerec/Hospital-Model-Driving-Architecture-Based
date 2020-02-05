@@ -9,7 +9,6 @@
         <th style="width:120px; background-color: #5DACCD; color:#fff">idCarrera</th>            
         <th style="width:120px; background-color: #5DACCD; color:#fff">nombre</th>            
         <th style="width:120px; background-color: #5DACCD; color:#fff">idFacultad</th>            
-
 		<th style="width:60px; background-color: #5DACCD; color:#fff"></th>
         <th style="width:60px; background-color: #5DACCD; color:#fff"></th>
         </tr>

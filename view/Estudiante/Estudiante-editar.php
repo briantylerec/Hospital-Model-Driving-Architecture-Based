@@ -9,7 +9,6 @@
 <form id="frm-alumno" action="?c=Estudiante&a=Modificar" method="post" enctype="multipart/form-data">      
 			<input type="hidden" name="id" value="<?php echo $Estudiante->idEstudiante; ?>" />
 	
-	
 			<div class="form-group">
         		<label>idEstudiante</label>
         		<input type="text" name="idEstudiante" value="<?php echo $Estudiante->idEstudiante; ?>" class="form-control" placeholder="Ingrese idEstudiante" required>

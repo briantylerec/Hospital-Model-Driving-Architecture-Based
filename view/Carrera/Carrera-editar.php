@@ -9,7 +9,6 @@
 <form id="frm-alumno" action="?c=Carrera&a=Modificar" method="post" enctype="multipart/form-data">      
 			<input type="hidden" name="id" value="<?php echo $Carrera->idCarrera; ?>" />
 	
-	
 			<div class="form-group">
         		<label>idCarrera</label>
         		<input type="text" name="idCarrera" value="<?php echo $Carrera->idCarrera; ?>" class="form-control" placeholder="Ingrese idCarrera" required>

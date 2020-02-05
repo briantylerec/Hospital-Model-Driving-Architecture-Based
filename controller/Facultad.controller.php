@@ -21,7 +21,6 @@ class FacultadController{
 			if(isset($_REQUEST ['idFacultad'])){
             $Facultad = $this->model->Obtener($_REQUEST ['idFacultad']);  
         }
-
         
         
         require_once 'view/header.php';

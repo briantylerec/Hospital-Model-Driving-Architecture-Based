@@ -21,7 +21,6 @@ class EstudianteController{
 			if(isset($_REQUEST ['idEstudiante'])){
             $Estudiante = $this->model->Obtener($_REQUEST ['idEstudiante']);  
         }
-
         
         
         require_once 'view/header.php';
