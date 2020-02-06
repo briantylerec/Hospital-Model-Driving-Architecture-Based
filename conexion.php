@@ -2,18 +2,6 @@
 
 function iniciar() {
 
-	$pdo = new PDO('mysql:host=mdaserver.mysql.database.azure.com', 'mdaserver@mdaserver', 'Universidad2020');
-	$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-	$sqlDB = "
-	CREATE DATABASE hospital";
-	
-	if ($pdo->query($sqlDB) === TRUE) {
-		echo "Database created successfully";
-	} else {
-		echo "Error creating database: " . $pdo->error;
-	}
-
 	$pdo = new PDO('mysql:host=mdaserver.mysql.database.azure.com;dbname=hospital', 'mdaserver@mdaserver', 'Universidad2020');
 	$pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
