@@ -7,7 +7,7 @@ class Database {
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 		$sqlDB = "
-		CREATE DATABASE myDB";
+		CREATE DATABASE hospital";
 		
 		if ($pdo->query($sqlDB) === TRUE) {
 			echo "Database created successfully";
